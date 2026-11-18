@@ -3,13 +3,18 @@ import { isAbsolute } from 'path';
 import { HttpResponse } from '../models/httpResponse';
 import { isJSONString, removeHeader } from './misc';
 
-export async function transformResponseWithJq(response: HttpResponse, filterPath: string, jqPath = ''): Promise<HttpResponse> {
+export type JqFilter = { path: string } | { program: string };
+
+export async function transformResponseWithJq(response: HttpResponse, filter: JqFilter, jqPath = ''): Promise<HttpResponse> {
     if (jqPath !== '' && (typeof jqPath !== 'string' || !isAbsolute(jqPath))) {
         throw new Error('Set rest-client-ng.jqPath to an absolute path to the jq executable.');
     }
 
+    // shortcut: inline programs use an argument, use a filter file above the OS argument length limit.
+    // A leading space keeps jq 1.6 from treating programs such as -1 as CLI options.
+    const filterArgs = 'path' in filter ? ['-f', filter.path] : [` ${filter.program}`];
     const body = await new Promise<string>((resolve, reject) => {
-        const jq = execFile(jqPath || 'jq', ['-M', '-f', filterPath], {
+        const jq = execFile(jqPath || 'jq', ['-M', ...filterArgs], {
             timeout: 10_000,
             maxBuffer: 10 * 1024 * 1024,
             windowsHide: true,

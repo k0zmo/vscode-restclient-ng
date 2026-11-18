@@ -6,7 +6,7 @@ import { HistoricalHttpRequest, HttpRequest } from '../models/httpRequest';
 import { RequestMetadata } from '../models/requestMetadata';
 import { RequestParserFactory } from '../models/requestParserFactory';
 import { HttpClient } from '../utils/httpClient';
-import { transformResponseWithJq } from '../utils/jqResponse';
+import { JqFilter, transformResponseWithJq } from '../utils/jqResponse';
 import { RequestState, RequestStatusEntry } from '../utils/requestStatusBarEntry';
 import { RequestVariableCache } from "../utils/requestVariableCache";
 import { Selector } from '../utils/selector';
@@ -20,7 +20,7 @@ export class RequestController {
     private _httpClient: HttpClient;
     private _webview: HttpResponseWebview;
     private _textDocumentView: HttpResponseTextDocumentView;
-    private _lastRequestSettingTuple: [HttpRequest, IRestClientSettings, string?];
+    private _lastRequestSettingTuple: [HttpRequest, IRestClientSettings, JqFilter?];
     private _lastPendingRequest?: HttpRequest;
 
     public constructor(context: ExtensionContext) {
@@ -56,18 +56,31 @@ export class RequestController {
 
         const requestSettings = new RequestSettings(metadatas);
         const settings: IRestClientSettings = new RestClientSettings(requestSettings);
-        const filter = metadatas.get(RequestMetadata.Jq);
-        const jqFilterPath = filter && document.uri.scheme === 'file'
-            ? resolve(dirname(document.uri.fsPath), filter)
-            : undefined;
-        if (metadatas.has(RequestMetadata.Jq) && !jqFilterPath) {
-            window.showWarningMessage('Use # @jq <filter path> in a saved request file.');
+        const filterPath = metadatas.get(RequestMetadata.Jq);
+        const program = metadatas.get(RequestMetadata.JqInline);
+        let jqFilter: JqFilter | undefined;
+        if (metadatas.has(RequestMetadata.JqInline)) {
+            if (metadatas.has(RequestMetadata.Jq)) {
+                window.showWarningMessage('Use either # @jq or # @jq-inline for a request.');
+                return;
+            }
+            if (!program) {
+                window.showWarningMessage('Use one non-empty # @jq-inline block closed with # @end-jq.');
+                return;
+            }
+            jqFilter = { program };
+        } else if (metadatas.has(RequestMetadata.Jq)) {
+            if (filterPath && document.uri.scheme === 'file') {
+                jqFilter = { path: resolve(dirname(document.uri.fsPath), filterPath) };
+            } else {
+                window.showWarningMessage('Use # @jq <filter path> in a saved request file.');
+            }
         }
 
         // parse http request
         const httpRequest = await RequestParserFactory.createRequestParser(text, settings).parseHttpRequest(name);
 
-        await this.runCore(httpRequest, settings, jqFilterPath, document);
+        await this.runCore(httpRequest, settings, jqFilter, document);
     }
 
     public async rerun() {
@@ -75,9 +88,9 @@ export class RequestController {
             return;
         }
 
-        const [request, settings, jqFilterPath] = this._lastRequestSettingTuple;
+        const [request, settings, jqFilter] = this._lastRequestSettingTuple;
 
-        await this.runCore(request, settings, jqFilterPath);
+        await this.runCore(request, settings, jqFilter);
     }
 
     public async cancel() {
@@ -93,13 +106,13 @@ export class RequestController {
         }
     }
 
-    private async runCore(httpRequest: HttpRequest, settings: IRestClientSettings, jqFilterPath?: string, document?: TextDocument) {
+    private async runCore(httpRequest: HttpRequest, settings: IRestClientSettings, jqFilter?: JqFilter, document?: TextDocument) {
         // clear status bar
         this._requestStatusEntry.update({ state: RequestState.Pending });
 
         // set last request and last pending request
         this._lastPendingRequest = httpRequest;
-        this._lastRequestSettingTuple = [httpRequest, settings, jqFilterPath];
+        this._lastRequestSettingTuple = [httpRequest, settings, jqFilter];
 
         // set http request
         try {
@@ -117,13 +130,13 @@ export class RequestController {
             }
 
             let previewResponse = response;
-            if (jqFilterPath) {
+            if (jqFilter) {
                 try {
                     if (!workspace.isTrusted) {
                         throw new Error('jq requires a trusted workspace.');
                     }
                     const jqPath = workspace.getConfiguration('rest-client-ng').get<string>('jqPath', '');
-                    previewResponse = await transformResponseWithJq(response, jqFilterPath, jqPath);
+                    previewResponse = await transformResponseWithJq(response, jqFilter, jqPath);
                 } catch (error) {
                     window.showWarningMessage(`Could not apply jq filter. Showing the original response. ${error.message}`);
                 }

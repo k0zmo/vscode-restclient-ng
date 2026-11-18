@@ -86,7 +86,27 @@ export class Selector {
 
     public static parseReqMetadatas(lines: string[]): Map<RequestMetadata, string | undefined> {
         const metadatas = new Map<RequestMetadata, string | undefined>();
+        let inlineLines: string[] | undefined;
+        let validInlineBlock = false;
         for (const line of lines) {
+            if (inlineLines) {
+                const comment = /^\s*(?:#|\/{2}) ?(.*)$/.exec(line);
+                if (!comment && !this.isEmptyLine(line)) {
+                    break;
+                }
+                const code = comment?.[1] ?? '';
+                if (/^\s*@end-jq\s*$/i.test(code)) {
+                    const program = inlineLines.join('\n');
+                    if (validInlineBlock && program.trim()) {
+                        metadatas.set(RequestMetadata.JqInline, program);
+                    }
+                    inlineLines = undefined;
+                } else {
+                    inlineLines.push(code);
+                }
+                continue;
+            }
+
             if (this.isEmptyLine(line) || this.isFileVariableDefinitionLine(line) || Constants.FileVariableChoiceRegex.test(line)) {
                 continue;
             }
@@ -108,6 +128,10 @@ export class Selector {
             if (metadata) {
                 if (metadata === RequestMetadata.Prompt) {
                     this.handlePromptMetadata(metadatas, line);
+                } else if (metadata === RequestMetadata.JqInline) {
+                    validInlineBlock = !metadatas.has(metadata) && !metaValue;
+                    metadatas.set(metadata, undefined);
+                    inlineLines = [];
                 } else {
                     metadatas.set(metadata, metaValue || undefined);
                 }

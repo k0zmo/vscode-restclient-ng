@@ -312,7 +312,20 @@ Create `filters/users.jq` relative to the request file. For a JSON response with
 .users | map({id, name})
 ```
 
-The response preview and its **Copy Response Body** and **Save Response Body** actions use the filtered output. **Save Full Response** and named request references use the original response. Rerunning a request reads the filter file again. If jq fails, the extension shows a warning and previews the original response.
+To keep a filter in the request file, use one `# @jq-inline` block above the request. Prefix each program line with `#` and close the block with `# @end-jq`.
+
+```http
+# @jq-inline
+# .users
+# | map(select(.active))
+# | map({id, name})
+# @end-jq
+GET https://api.example.com/users
+```
+
+Use a separate `.jq` file for programs that exceed the operating system's command-line length limit.
+
+The response preview and its **Copy Response Body** and **Save Response Body** actions use the filtered output. **Save Full Response** and named request references use the original response. **Rerun Last Request** reuses the last inline program or rereads the filter file. Use **Send Request** to apply edits to an inline block. If jq fails, the extension shows a warning and previews the original response.
 
 ## Save Full Response
 ![Save Response](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/response.gif)

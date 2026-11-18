@@ -22,6 +22,7 @@ export enum RequestMetadata {
      */
     Prompt = 'prompt',
     Jq = 'jq',
+    JqInline = 'jq-inline',
 }
 
 export function fromString(value: string): RequestMetadata | undefined {
