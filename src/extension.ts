@@ -10,6 +10,7 @@ import { SwaggerController } from './controllers/swaggerController';
 import { CustomVariableDiagnosticsProvider } from "./providers/customVariableDiagnosticsProvider";
 import { RequestBodyDocumentLinkProvider } from './providers/documentLinkProvider';
 import { EnvironmentOrFileVariableHoverProvider } from './providers/environmentOrFileVariableHoverProvider';
+import { FileVariableChoiceCodeLensProvider } from './providers/fileVariableChoiceCodeLensProvider';
 import { FileVariableDefinitionProvider } from './providers/fileVariableDefinitionProvider';
 import { FileVariableReferenceProvider } from './providers/fileVariableReferenceProvider';
 import { FileVariableReferencesCodeLensProvider } from './providers/fileVariableReferencesCodeLensProvider';
@@ -22,6 +23,7 @@ import { RequestVariableDefinitionProvider } from './providers/requestVariableDe
 import { RequestVariableHoverProvider } from './providers/requestVariableHoverProvider';
 import { AadTokenCache } from './utils/aadTokenCache';
 import { ConfigurationDependentRegistration } from './utils/dependentRegistration';
+import { FileVariableChoices } from './utils/fileVariableChoices';
 import { UserDataManager } from './utils/userDataManager';
 
 // this method is called when your extension is activated
@@ -46,6 +48,8 @@ export async function activate(context: ExtensionContext) {
     context.subscriptions.push(commands.registerCommand('rest-client-ng.generate-codesnippet', () => codeSnippetController.run()));
     context.subscriptions.push(commands.registerCommand('rest-client-ng.copy-request-as-curl', () => codeSnippetController.copyAsCurl()));
     context.subscriptions.push(commands.registerCommand('rest-client-ng.switch-environment', () => environmentController.switchEnvironment()));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng._pickFileVariableChoice',
+        (document: TextDocument, name: string) => FileVariableChoices.pick(document, name)));
     context.subscriptions.push(commands.registerCommand('rest-client-ng.clear-aad-token-cache', () => AadTokenCache.clear()));
     context.subscriptions.push(commands.registerCommand('rest-client-ng.clear-cookies', () => requestController.clearCookies()));
     context.subscriptions.push(commands.registerCommand('rest-client-ng._openDocumentLink', args => {
@@ -68,6 +72,7 @@ export async function activate(context: ExtensionContext) {
     context.subscriptions.push(languages.registerCompletionItemProvider(documentSelector, new RequestVariableCompletionItemProvider(), '.'));
     context.subscriptions.push(languages.registerHoverProvider(documentSelector, new EnvironmentOrFileVariableHoverProvider()));
     context.subscriptions.push(languages.registerHoverProvider(documentSelector, new RequestVariableHoverProvider()));
+    context.subscriptions.push(languages.registerCodeLensProvider(documentSelector, new FileVariableChoiceCodeLensProvider()));
     context.subscriptions.push(
         new ConfigurationDependentRegistration(
             () => languages.registerCodeLensProvider(documentSelector, new HttpCodeLensProvider()),

@@ -523,6 +523,23 @@ Content-Type: {{contentType}}
 
 ```
 
+#### File Variable Choices
+
+Use `# @choice <variable> <label> = <value>` above the first request in an HTTP file. Add one line per option. Labels can contain spaces, and values are used as written.
+
+```http
+# @choice fabricId Lab = fabric-123
+# @choice fabricId Staging = fabric-456
+# @choice fabricId Production = fabric-789
+
+###
+GET {{platformUrl}}/cluster/state/fabrics/{{fabricId}}
+```
+
+On the first send that directly references `{{fabricId}}`, select a value from the picker. Press Escape to cancel the send. The selection is shared by requests in that file for the extension session. Use the link above the choices to switch. If you change or remove the selected option, the next send asks you to pick again when options are available.
+
+Choices override ordinary file and environment variables of the same name in the request. A request-level `# @prompt` for the same name takes precedence. After switching fabrics, use **Send Request** to apply the new selection. **Rerun Last Request** repeats the previously resolved request.
+
 #### Prompt Variables
 With prompt variables, user can input the variables to be used when sending a request. This gives a flexibility to change most dynamic variables without having to change the `http` file. User can specify more than one prompt variables. The definition syntax of prompt variables is like a single-line comment by adding the syntax before the desired request url with the following syntax __`// @prompt {var1}`__ or __`# @prompt {var1}`__. A variable description is also assignable using __`// @prompt {var1} {description}`__ or __`# @prompt {var1} {description}`__ which will prompt an input popup with a desired description message.
 

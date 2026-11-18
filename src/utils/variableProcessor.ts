@@ -1,5 +1,7 @@
 import { TextDocument } from 'vscode';
+import { VariableReferenceRegex } from '../common/constants';
 import { VariableType } from "../models/variableType";
+import { FileVariableChoices } from './fileVariableChoices';
 import { EnvironmentVariableProvider } from './httpVariableProviders/environmentVariableProvider';
 import { FileVariableProvider } from './httpVariableProviders/fileVariableProvider';
 import { HttpVariableProvider } from './httpVariableProviders/httpVariableProvider';
@@ -17,7 +19,7 @@ export class VariableProcessor {
     ];
 
     public static async processRawRequest(request: string, resolvedVariables: Map<string, string> = new Map<string, string>()) {
-        const variableReferenceRegex = /\{{2}(.+?)\}{2}/g;
+        const variableReferenceRegex = new RegExp(VariableReferenceRegex);
         let result = '';
         let match: RegExpExecArray | null;
         let lastIndex = 0;
@@ -88,6 +90,9 @@ export class VariableProcessor {
             }
         });
 
+        for (const name of FileVariableChoices.getDefinitions(document).keys()) {
+            variableDefinitions.set(name, [VariableType.File]);
+        }
         return variableDefinitions;
     }
 }

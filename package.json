@@ -2,7 +2,7 @@
   "name": "rest-client-ng",
   "displayName": "REST Client NG",
   "description": "Send HTTP requests and filter JSON responses with jq",
-  "version": "0.26.1",
+  "version": "0.26.2",
   "publisher": "k0zmo",
   "author": {
     "name": "Huachao Mao",
@@ -703,6 +703,7 @@
     "webpack": "webpack --mode development",
     "watch": "webpack --mode development --watch",
     "test:jq": "tsc --skipLibCheck --outDir out && node --test test/jqResponse.test.js",
+    "test:choices": "tsc --skipLibCheck --outDir out && node --test test/fileVariableChoices.test.js",
     "tslint": "tslint --project tsconfig.json"
   },
   "devDependencies": {
