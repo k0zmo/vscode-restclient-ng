@@ -291,7 +291,15 @@ You can also clear request history by pressing `F1` and then selecting/typing `R
 
 ## Transform response bodies with jq
 
-Install jq and make it available on the VS Code extension host's `PATH`. In a trusted workspace, add `# @jq` above a request in a saved file.
+Install jq on the VS Code extension host. If jq is outside `PATH`, set `rest-client-ng.jqPath` to the absolute path of the executable in your VS Code User settings or Remote settings.
+
+```json
+{
+  "rest-client-ng.jqPath": "C:/Tools/jq/jq.exe"
+}
+```
+
+In a trusted workspace, add `# @jq` above a request in a saved file.
 
 ```http
 # @jq filters/users.jq

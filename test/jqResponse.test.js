@@ -1,7 +1,8 @@
 const assert = require('node:assert/strict');
+const { existsSync } = require('node:fs');
 const { mkdtemp, rmdir, unlink, writeFile } = require('node:fs/promises');
 const { tmpdir } = require('node:os');
-const { join } = require('node:path');
+const { delimiter, join, resolve } = require('node:path');
 const { test } = require('node:test');
 const { HttpResponse } = require('../out/src/models/httpResponse');
 const { transformResponseWithJq } = require('../out/src/utils/jqResponse');
@@ -30,6 +31,15 @@ test('runs jq filters from a file and preserves the server response', async t =>
     assert.equal(preview.bodyBuffer.toString(), preview.body);
     assert.equal(original.body, input);
     assert.equal(original.headers['Content-Encoding'], 'gzip');
+
+    const jqName = process.platform === 'win32' ? 'jq.exe' : 'jq';
+    const jqPath = process.env.PATH.split(delimiter)
+        .map(entry => resolve(entry, jqName))
+        .find(existsSync);
+    assert.ok(jqPath);
+    assert.equal((await transformResponseWithJq(original, filterPath, jqPath)).body, preview.body);
+    await assert.rejects(transformResponseWithJq(original, filterPath, './jq'), /absolute path/);
+    await assert.rejects(transformResponseWithJq(original, filterPath, join(directory, jqName)), /Check rest-client-ng.jqPath/);
 
     await writeFile(filterPath, '.users[] | .id, .name');
     const stream = await transformResponseWithJq(original, filterPath);

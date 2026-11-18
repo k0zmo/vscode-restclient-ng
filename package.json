@@ -2,7 +2,7 @@
   "name": "rest-client-ng",
   "displayName": "REST Client NG",
   "description": "Send HTTP requests and filter JSON responses with jq",
-  "version": "0.26.0",
+  "version": "0.26.1",
   "publisher": "k0zmo",
   "author": {
     "name": "Huachao Mao",
@@ -392,6 +392,12 @@
           "default": [],
           "scope": "resource",
           "description": "Excluded hosts when using using proxy settings"
+        },
+        "rest-client-ng.jqPath": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "Absolute path to the jq executable. Leave empty to find jq on the extension host PATH."
         },
         "rest-client-ng.fontSize": {
           "type": "number",

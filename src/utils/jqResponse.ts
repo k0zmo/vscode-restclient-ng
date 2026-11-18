@@ -1,17 +1,27 @@
 import { execFile } from 'child_process';
+import { isAbsolute } from 'path';
 import { HttpResponse } from '../models/httpResponse';
 import { isJSONString, removeHeader } from './misc';
 
-export async function transformResponseWithJq(response: HttpResponse, filterPath: string): Promise<HttpResponse> {
+export async function transformResponseWithJq(response: HttpResponse, filterPath: string, jqPath = ''): Promise<HttpResponse> {
+    if (jqPath !== '' && (typeof jqPath !== 'string' || !isAbsolute(jqPath))) {
+        throw new Error('Set rest-client-ng.jqPath to an absolute path to the jq executable.');
+    }
+
     const body = await new Promise<string>((resolve, reject) => {
-        const jq = execFile('jq', ['-M', '-f', filterPath], {
+        const jq = execFile(jqPath || 'jq', ['-M', '-f', filterPath], {
             timeout: 10_000,
             maxBuffer: 10 * 1024 * 1024,
             windowsHide: true,
         }, (error, stdout, stderr) => {
             if (error) {
-                const detail = error.code === 'ENOENT' ? 'Install jq and add it to the extension host PATH.'
-                    : error.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER' ? 'jq exceeded the 10 MiB output limit.'
+                if (error.code === 'ENOENT') {
+                    reject(new Error(jqPath
+                        ? `jq was not found at "${jqPath}". Check rest-client-ng.jqPath.`
+                        : 'Install jq and add it to the extension host PATH or set rest-client-ng.jqPath.'));
+                    return;
+                }
+                const detail = error.code === 'ERR_CHILD_PROCESS_STDIO_MAXBUFFER' ? 'jq exceeded the 10 MiB output limit.'
                     : error.killed ? 'jq exceeded the 10-second time limit.'
                     : stderr.trim().slice(0, 500) || error.message;
                 reject(new Error(detail));

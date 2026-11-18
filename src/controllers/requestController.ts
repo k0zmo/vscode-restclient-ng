@@ -122,7 +122,8 @@ export class RequestController {
                     if (!workspace.isTrusted) {
                         throw new Error('jq requires a trusted workspace.');
                     }
-                    previewResponse = await transformResponseWithJq(response, jqFilterPath);
+                    const jqPath = workspace.getConfiguration('rest-client-ng').get<string>('jqPath', '');
+                    previewResponse = await transformResponseWithJq(response, jqFilterPath, jqPath);
                 } catch (error) {
                     window.showWarningMessage(`Could not apply jq filter. Showing the original response. ${error.message}`);
                 }
