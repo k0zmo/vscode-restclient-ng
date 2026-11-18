@@ -32,9 +32,14 @@ export class HttpResponseTextDocumentView {
             await window.showTextDocument(document, { viewColumn: column, preserveFocus: !this.settings.previewResponsePanelTakeFocus, preview: false });
         } else {
             document = this.documents[this.documents.length - 1];
-            languages.setTextDocumentLanguage(document, language);
+            if (document.languageId !== language) {
+                document = await languages.setTextDocumentLanguage(document, language);
+                if (!this.documents.includes(document)) {
+                    this.documents.push(document);
+                }
+            }
             const editor = await window.showTextDocument(document, { viewColumn: column, preserveFocus: !this.settings.previewResponsePanelTakeFocus, preview: false });
-            editor.edit(edit => {
+            await editor.edit(edit => {
                 const startPosition = new Position(0, 0);
                 const endPosition = document.lineAt(document.lineCount - 1).range.end;
                 edit.replace(new Range(startPosition, endPosition), content);

@@ -38,22 +38,22 @@ export async function activate(context: ExtensionContext) {
     context.subscriptions.push(historyController);
     context.subscriptions.push(codeSnippetController);
     context.subscriptions.push(environmentController);
-    context.subscriptions.push(commands.registerCommand('rest-client.request', ((document: TextDocument, range: Range) => requestController.run(range))));
-    context.subscriptions.push(commands.registerCommand('rest-client.rerun-last-request', () => requestController.rerun()));
-    context.subscriptions.push(commands.registerCommand('rest-client.cancel-request', () => requestController.cancel()));
-    context.subscriptions.push(commands.registerCommand('rest-client.history', () => historyController.save()));
-    context.subscriptions.push(commands.registerCommand('rest-client.clear-history', () => historyController.clear()));
-    context.subscriptions.push(commands.registerCommand('rest-client.generate-codesnippet', () => codeSnippetController.run()));
-    context.subscriptions.push(commands.registerCommand('rest-client.copy-request-as-curl', () => codeSnippetController.copyAsCurl()));
-    context.subscriptions.push(commands.registerCommand('rest-client.switch-environment', () => environmentController.switchEnvironment()));
-    context.subscriptions.push(commands.registerCommand('rest-client.clear-aad-token-cache', () => AadTokenCache.clear()));
-    context.subscriptions.push(commands.registerCommand('rest-client.clear-cookies', () => requestController.clearCookies()));
-    context.subscriptions.push(commands.registerCommand('rest-client._openDocumentLink', args => {
+    context.subscriptions.push(commands.registerCommand('rest-client-ng.request', ((document: TextDocument, range: Range) => requestController.run(range))));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng.rerun-last-request', () => requestController.rerun()));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng.cancel-request', () => requestController.cancel()));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng.history', () => historyController.save()));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng.clear-history', () => historyController.clear()));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng.generate-codesnippet', () => codeSnippetController.run()));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng.copy-request-as-curl', () => codeSnippetController.copyAsCurl()));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng.switch-environment', () => environmentController.switchEnvironment()));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng.clear-aad-token-cache', () => AadTokenCache.clear()));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng.clear-cookies', () => requestController.clearCookies()));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng._openDocumentLink', args => {
         workspace.openTextDocument(Uri.parse(args.path)).then(window.showTextDocument, error => {
             window.showErrorMessage(error.message);
         });
     }));
-    context.subscriptions.push(commands.registerCommand('rest-client.import-swagger', async () => swaggerController.import()));
+    context.subscriptions.push(commands.registerCommand('rest-client-ng.import-swagger', async () => swaggerController.import()));
 
 
     const documentSelector = [

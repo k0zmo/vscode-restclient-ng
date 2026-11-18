@@ -21,6 +21,7 @@ export enum RequestMetadata {
      * Used to allow user to interactively input variables for this request
      */
     Prompt = 'prompt',
+    Jq = 'jq',
 }
 
 export function fromString(value: string): RequestMetadata | undefined {

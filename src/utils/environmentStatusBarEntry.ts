@@ -6,10 +6,10 @@ export class EnvironmentStatusEntry {
 
     public constructor(environment: string) {
         this.environmentEntry = window.createStatusBarItem('environment', StatusBarAlignment.Right, 100);
-        this.environmentEntry.command = 'rest-client.switch-environment';
+        this.environmentEntry.command = 'rest-client-ng.switch-environment';
         this.environmentEntry.text = environment;
-        this.environmentEntry.tooltip = 'Switch REST Client Environment';
-        this.environmentEntry.name = 'REST Client Environment';
+        this.environmentEntry.tooltip = 'Switch REST Client NG Environment';
+        this.environmentEntry.name = 'REST Client NG Environment';
         this.environmentEntry.show();
 
         window.onDidChangeActiveTextEditor(this.showHideStatusBar, this);

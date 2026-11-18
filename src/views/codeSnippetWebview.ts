@@ -1,5 +1,4 @@
 import { Clipboard, commands, env, ExtensionContext, ViewColumn, WebviewPanel, window } from 'vscode';
-import { trace } from '../utils/decorator';
 import { disposeAll } from '../utils/dispose';
 import { BaseWebview } from './baseWebview';
 
@@ -9,11 +8,11 @@ const codeHighlightLinenums = require('code-highlight-linenums');
 export class CodeSnippetWebview extends BaseWebview {
 
     protected get viewType(): string {
-        return 'rest-code-snippet';
+        return 'rest-client-ng-code-snippet';
     }
 
     protected get previewActiveContextKey(): string {
-        return 'codeSnippetPreviewFocus';
+        return 'rest-client-ng.codeSnippetPreviewFocus';
     }
 
     private readonly clipboard: Clipboard = env.clipboard;
@@ -23,7 +22,7 @@ export class CodeSnippetWebview extends BaseWebview {
     public constructor(context: ExtensionContext) {
         super(context);
 
-        this.context.subscriptions.push(commands.registerCommand('rest-client.copy-codesnippet', this.copy, this));
+        this.context.subscriptions.push(commands.registerCommand('rest-client-ng.copy-codesnippet', this.copy, this));
     }
 
     public async render(convertResult: string, title: string, lang: string) {
@@ -68,7 +67,6 @@ export class CodeSnippetWebview extends BaseWebview {
         disposeAll(this.panels);
     }
 
-    @trace('Copy Code Snippet')
     private async copy() {
         if (this.activeCodeSnippet) {
             await this.clipboard.writeText(this.activeCodeSnippet);

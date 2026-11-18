@@ -4,9 +4,9 @@ import * as path from 'path';
 import { HistoricalHttpRequest } from '../models/httpRequest';
 import { JsonFileUtility } from './jsonFileUtility';
 
-const restClientDir = 'rest-client';
-const rootPath = process.env.VSC_REST_CLIENT_HOME !== undefined
-    ? process.env.VSC_REST_CLIENT_HOME
+const restClientDir = 'rest-client-ng';
+const rootPath = process.env.VSC_REST_CLIENT_NG_HOME !== undefined
+    ? process.env.VSC_REST_CLIENT_NG_HOME
     : path.join(os.homedir(), `.${restClientDir}`);
 
 function getCachePath(): string {

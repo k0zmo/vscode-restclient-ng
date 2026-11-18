@@ -1,11 +1,12 @@
-import { ExtensionContext, Range, TextDocument, ViewColumn, window } from 'vscode';
+import { dirname, resolve } from 'path';
+import { ExtensionContext, Range, TextDocument, ViewColumn, window, workspace } from 'vscode';
 import Logger from '../logger';
 import { IRestClientSettings, RequestSettings, RestClientSettings } from '../models/configurationSettings';
 import { HistoricalHttpRequest, HttpRequest } from '../models/httpRequest';
 import { RequestMetadata } from '../models/requestMetadata';
 import { RequestParserFactory } from '../models/requestParserFactory';
-import { trace } from "../utils/decorator";
 import { HttpClient } from '../utils/httpClient';
+import { transformResponseWithJq } from '../utils/jqResponse';
 import { RequestState, RequestStatusEntry } from '../utils/requestStatusBarEntry';
 import { RequestVariableCache } from "../utils/requestVariableCache";
 import { Selector } from '../utils/selector';
@@ -19,7 +20,7 @@ export class RequestController {
     private _httpClient: HttpClient;
     private _webview: HttpResponseWebview;
     private _textDocumentView: HttpResponseTextDocumentView;
-    private _lastRequestSettingTuple: [HttpRequest, IRestClientSettings];
+    private _lastRequestSettingTuple: [HttpRequest, IRestClientSettings, string?];
     private _lastPendingRequest?: HttpRequest;
 
     public constructor(context: ExtensionContext) {
@@ -30,7 +31,6 @@ export class RequestController {
         this._textDocumentView = new HttpResponseTextDocumentView();
     }
 
-    @trace('Request')
     public async run(range: Range) {
         const editor = window.activeTextEditor;
         const document = getCurrentTextDocument();
@@ -56,26 +56,30 @@ export class RequestController {
 
         const requestSettings = new RequestSettings(metadatas);
         const settings: IRestClientSettings = new RestClientSettings(requestSettings);
+        const filter = metadatas.get(RequestMetadata.Jq);
+        const jqFilterPath = filter && document.uri.scheme === 'file'
+            ? resolve(dirname(document.uri.fsPath), filter)
+            : undefined;
+        if (metadatas.has(RequestMetadata.Jq) && !jqFilterPath) {
+            window.showWarningMessage('Use # @jq <filter path> in a saved request file.');
+        }
 
         // parse http request
         const httpRequest = await RequestParserFactory.createRequestParser(text, settings).parseHttpRequest(name);
 
-        await this.runCore(httpRequest, settings, document);
+        await this.runCore(httpRequest, settings, jqFilterPath, document);
     }
 
-    @trace('Rerun Request')
     public async rerun() {
         if (!this._lastRequestSettingTuple) {
             return;
         }
 
-        const [request, settings] = this._lastRequestSettingTuple;
+        const [request, settings, jqFilterPath] = this._lastRequestSettingTuple;
 
-        // TODO: recover from last request settings
-        await this.runCore(request, settings);
+        await this.runCore(request, settings, jqFilterPath);
     }
 
-    @trace('Cancel Request')
     public async cancel() {
         this._lastPendingRequest?.cancel();
 
@@ -89,13 +93,13 @@ export class RequestController {
         }
     }
 
-    private async runCore(httpRequest: HttpRequest, settings: IRestClientSettings, document?: TextDocument) {
+    private async runCore(httpRequest: HttpRequest, settings: IRestClientSettings, jqFilterPath?: string, document?: TextDocument) {
         // clear status bar
         this._requestStatusEntry.update({ state: RequestState.Pending });
 
         // set last request and last pending request
         this._lastPendingRequest = httpRequest;
-        this._lastRequestSettingTuple = [httpRequest, settings];
+        this._lastRequestSettingTuple = [httpRequest, settings, jqFilterPath];
 
         // set http request
         try {
@@ -112,19 +116,34 @@ export class RequestController {
                 RequestVariableCache.add(document, httpRequest.name, response);
             }
 
+            let previewResponse = response;
+            if (jqFilterPath) {
+                try {
+                    if (!workspace.isTrusted) {
+                        throw new Error('jq requires a trusted workspace.');
+                    }
+                    previewResponse = await transformResponseWithJq(response, jqFilterPath);
+                } catch (error) {
+                    window.showWarningMessage(`Could not apply jq filter. Showing the original response. ${error.message}`);
+                }
+                if (httpRequest.isCancelled) {
+                    return;
+                }
+            }
+
             try {
                 const activeColumn = window.activeTextEditor!.viewColumn;
                 const previewColumn = settings.previewColumn === ViewColumn.Active
                     ? activeColumn
                     : ((activeColumn as number) + 1) as ViewColumn;
                 if (settings.previewResponseInUntitledDocument) {
-                    this._textDocumentView.render(response, previewColumn);
+                    await this._textDocumentView.render(previewResponse, previewColumn);
                 } else if (previewColumn) {
-                    this._webview.render(response, previewColumn);
+                    await this._webview.render(previewResponse, previewColumn, response);
                 }
             } catch (reason) {
                 Logger.error('Unable to preview response:', reason);
-                window.showErrorMessage(reason);
+                window.showErrorMessage(reason.message);
             }
 
             // persist to history json file
@@ -136,7 +155,7 @@ export class RequestController {
             }
 
             if (error.code === 'ETIMEDOUT') {
-                error.message = `Request timed out. Double-check your network connection and/or raise the timeout duration (currently set to ${settings.timeoutInMilliseconds}ms) as needed: 'rest-client.timeoutinmilliseconds'. Details: ${error}.`;
+                error.message = `Request timed out. Double-check your network connection and/or raise the timeout duration (currently set to ${settings.timeoutInMilliseconds}ms) as needed: 'rest-client-ng.timeoutinmilliseconds'. Details: ${error}.`;
             } else if (error.code === 'ECONNREFUSED') {
                 error.message = `The connection was rejected. Either the requested service isn’t running on the requested server/port, the proxy settings in vscode are misconfigured, or a firewall is blocking requests. Details: ${error}.`;
             } else if (error.code === 'ENETUNREACH') {

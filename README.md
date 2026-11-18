@@ -1,12 +1,14 @@
-# REST Client
+# REST Client NG
 
-[![Open in Visual Studio Code](https://img.shields.io/static/v1?logo=visualstudiocode&label=&message=Open%20in%20Visual%20Studio%20Code&labelColor=2c2c32&color=007acc&logoColor=007acc)](https://open.vscode.dev/Huachao/vscode-restclient) [![Node CI](https://github.com/Huachao/vscode-restclient/workflows/Node%20CI/badge.svg?event=push)](https://github.com/Huachao/vscode-restclient/actions?query=workflow%3A%22Node+CI%22) [![Join the chat at https://gitter.im/Huachao/vscode-restclient](https://badges.gitter.im/Huachao/vscode-restclient.svg)](https://gitter.im/Huachao/vscode-restclient?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Marketplace Version](https://vsmarketplacebadges.dev/version-short/humao.rest-client.svg)](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) [![Downloads](https://vsmarketplacebadges.dev/downloads-short/humao.rest-client.svg
-)](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) [![Installs](https://vsmarketplacebadges.dev/installs-short/humao.rest-client.svg)](https://marketplace.visualstudio.com/items?itemName=humao.rest-client) [![Rating](https://vsmarketplacebadges.dev/rating-short/humao.rest-client.svg)](https://marketplace.visualstudio.com/items?itemName=humao.rest-client)
+A fork of [REST Client](https://github.com/Huachao/vscode-restclient) with per-request jq response filters.
 
-REST Client allows you to send HTTP request and view the response in Visual Studio Code directly. It eliminates the need for a separate tool to test REST APIs and makes API testing convenient and efficient.
+REST Client NG allows you to send HTTP request and view the response in Visual Studio Code directly. It eliminates the need for a separate tool to test REST APIs and makes API testing convenient and efficient.
+
+Existing REST Client settings and custom keybindings use the `rest-client.` prefix. To use them with this fork, change the prefix to `rest-client-ng.`.
 
 ## Main Features
 * Send/Cancel/Rerun __HTTP request__ in editor and view response in a separate pane with syntax highlight
+* Transform JSON response bodies with [jq](#transform-response-bodies-with-jq)
 * Send __GraphQL query__ and author __GraphQL variables__ in editor
 * Send __cURL command__ in editor and copy HTTP request as `cURL command`
 * Auto save and view/clear request history
@@ -77,16 +79,16 @@ content-type: application/json
     "time": "Wed, 21 Oct 2015 18:27:50 GMT"
 }
 ```
-To send a prepared request, you have several options. The easiest way is to click the `Send Request` link above the request. This link will appear automatically if the file's language mode is set to `HTTP`. You can also use the shortcut `Ctrl+Alt+R`(`Cmd+Alt+R` for macOS), right-click in the editor and select `Send Request` from the context menu, or press `F1` and select/type `Rest Client: Send Request`.
+To send a prepared request, you have several options. The easiest way is to click the `Send Request` link above the request. This link will appear automatically if the file's language mode is set to `HTTP`. You can also use the shortcut `Ctrl+Alt+R`(`Cmd+Alt+R` for macOS), right-click in the editor and select `Send Request` from the context menu, or press `F1` and select/type `REST Client NG: Send Request`.
 
-The response will be previewed in a separate webview panel inside Visual Studio Code. If you prefer to use the full power of searching, selecting, or manipulating in Visual Studio Code, you can preview the response in an untitled document by setting `rest-client.previewResponseInUntitledDocument` to `true`.
+The response will be previewed in a separate webview panel inside Visual Studio Code. If you prefer to use the full power of searching, selecting, or manipulating in Visual Studio Code, you can preview the response in an untitled document by setting `rest-client-ng.previewResponseInUntitledDocument` to `true`.
 
 When you issue a request, a waiting spin icon will appear in the status bar until the response is received. You can click the spin icon to cancel the request. Once the response is received, the waiting icon will be replaced with the total duration and response size. By hovering over the total duration in the status bar, you can view a breakdown of the response time, including details on _Socket_, _DNS_, _TCP_, _First Byte_ and _Download_. By hovering over the response size displayed in the status bar, you can view a breakdown of the response size details for both the _headers_ and _body_.
 
-> The shortcuts in the REST Client Extension can be accessed exclusively when using the file language modes `http` and `plaintext`.
+> The shortcuts in the REST Client NG Extension can be accessed exclusively when using the file language modes `http` and `plaintext`.
 
 ### Select Request Text
-If you need to store multiple requests in the same file and execute them at your convenience, REST Client Extension has got you covered. By using the three or more consecutive `#` symbol as a delimiter, you can create a separation between the requests that the extension can recognize. Once you have done this, simply place your cursor between the delimiters of the desired request, issue it as usual, and the extension will send it out without any hassle.
+If you need to store multiple requests in the same file and execute them at your convenience, REST Client NG Extension has got you covered. By using the three or more consecutive `#` symbol as a delimiter, you can create a separation between the requests that the extension can recognize. Once you have done this, simply place your cursor between the delimiters of the desired request, issue it as usual, and the extension will send it out without any hassle.
 ```http
 GET https://example.com/comments/1 HTTP/1.1
 
@@ -104,10 +106,10 @@ content-type: application/json
     "time": "Wed, 21 Oct 2015 18:27:50 GMT"
 }
 ```
-REST Client extension also provides the flexibility that you can send the request with your selected text in editor.
+REST Client NG extension also provides the flexibility that you can send the request with your selected text in editor.
 
 ## Install
-Press `F1`, type `ext install` then search for `rest-client`.
+Press `F1`, type `ext install` then search for `rest-client-ng`.
 
 ## Making Request
 ![rest-client](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/usage.gif)
@@ -138,7 +140,7 @@ GET https://example.com/comments
 ```
 
 ### Request Headers
-Once you've written your _Request line_, the lines that immediately follow until the first empty line will be parsed as _Request Headers_. These headers should follow the standard `field-name: field-value` format, with each line representing a single header. By default if you don't explicitly specify a `User-Agent` header, `REST Client Extension` will automatically add one with the value `vscode-restclient`. However, if you want to change the default value, you can do so in the `rest-client.defaultHeaders` setting.
+Once you've written your _Request line_, the lines that immediately follow until the first empty line will be parsed as _Request Headers_. These headers should follow the standard `field-name: field-value` format, with each line representing a single header. By default if you don't explicitly specify a `User-Agent` header, `REST Client NG Extension` will automatically add one with the value `vscode-restclient`. However, if you want to change the default value, you can do so in the `rest-client-ng.defaultHeaders` setting.
 
 Below are examples of _Request Headers_:
 ```http
@@ -224,7 +226,7 @@ name=foo
 > When your mouse is over the document link, you can `Ctrl+Click`(`Cmd+Click` for macOS) to open the file in a new tab.
 
 ## Making GraphQL Request
-With [GraphQL](https://www.graphql.com/) support in REST Client extension, you can author and send `GraphQL` query using the request body. Besides that you can also author GraphQL variables in the request body. GraphQL variables part in request body is optional, you also need to add a **blank line** between GraphQL query and variables if you need it.
+With [GraphQL](https://www.graphql.com/) support in REST Client NG extension, you can author and send `GraphQL` query using the request body. Besides that you can also author GraphQL variables in the request body. GraphQL variables part in request body is optional, you also need to add a **blank line** between GraphQL query and variables if you need it.
 
 You can specify a request as `GraphQL Request` by adding a custom request header `X-Request-Type: GraphQL` in your headers. The following code illustrates this:
 ```http
@@ -261,9 +263,9 @@ query ($name: String!, $owner: String!) {
 
 ## Making cURL Request
 ![cURL Request](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/curl-request.png)
-We add the capability to directly run [curl request](https://curl.haxx.se/) in REST Client extension. The issuing request command is the same as raw HTTP one. REST Client will automatically parse the request with specified parser.
+We add the capability to directly run [curl request](https://curl.haxx.se/) in REST Client NG extension. The issuing request command is the same as raw HTTP one. REST Client NG will automatically parse the request with specified parser.
 
-`REST Client` doesn't fully support all the options of `cURL`, since underneath we use `request` library to send request which doesn't accept all the `cURL` options. Supported options are listed below:
+`REST Client NG` doesn't fully support all the options of `cURL`, since underneath we use `request` library to send request which doesn't accept all the `cURL` options. Supported options are listed below:
 * -X, --request
 * -L, --location, --url
 * -H, --header(no _@_ support)
@@ -273,28 +275,45 @@ We add the capability to directly run [curl request](https://curl.haxx.se/) in R
 * -d, --data, --data-ascii,--data-binary, --data-raw
 
 ## Copy Request As cURL
-If you need to quickly obtain the curl format of an HTTP request and save it to your clipboard, you can use a handy shortcut. Simply hit `F1` and select/type `Rest Client: Copy Request As cURL`. Alternatively, you can right-click in the editor and select `Copy Request As cURL.`
+If you need to quickly obtain the curl format of an HTTP request and save it to your clipboard, you can use a handy shortcut. Simply hit `F1` and select/type `REST Client NG: Copy Request As cURL`. Alternatively, you can right-click in the editor and select `Copy Request As cURL.`
 
 ## Cancel Request
-If you want to cancel a processing request, click the waiting spin icon or use shortcut `Ctrl+Alt+K`(`Cmd+Alt+K` for macOS), or press `F1` and then select/type `Rest Client: Cancel Request`.
+If you want to cancel a processing request, click the waiting spin icon or use shortcut `Ctrl+Alt+K`(`Cmd+Alt+K` for macOS), or press `F1` and then select/type `REST Client NG: Cancel Request`.
 
 ## Rerun Last Request
-Sometimes you may want to refresh the API response, now you could do it simply using shortcut `Ctrl+Alt+L`(`Cmd+Alt+L` for macOS), or press `F1` and then select/type `Rest Client: Rerun Last Request` to rerun the last request.
+Sometimes you may want to refresh the API response, now you could do it simply using shortcut `Ctrl+Alt+L`(`Cmd+Alt+L` for macOS), or press `F1` and then select/type `REST Client NG: Rerun Last Request` to rerun the last request.
 
 ## Request History
 ![request-history](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/request-history.png)
-Every time you send an http request, the request details, including method, url, headers, and body, are saved into a file for future reference. To access this content, you can use the shortcut `Ctrl+Alt+H`(`Cmd+Alt+H` for macOS), or press `F1` and then select/type `Rest Client: Request History`. This will allow you to view the last __50__ request items in time reversing order, displaying the method, url, and request time for each one. After specified request history item is selected, the request details would be displayed in a temp file, you can view the request details or follow previous step to trigger the request again.
+Every time you send an http request, the request details, including method, url, headers, and body, are saved into a file for future reference. To access this content, you can use the shortcut `Ctrl+Alt+H`(`Cmd+Alt+H` for macOS), or press `F1` and then select/type `REST Client NG: Request History`. This will allow you to view the last __50__ request items in time reversing order, displaying the method, url, and request time for each one. After specified request history item is selected, the request details would be displayed in a temp file, you can view the request details or follow previous step to trigger the request again.
 
-You can also clear request history by pressing `F1` and then selecting/typing `Rest Client: Clear Request History`.
+You can also clear request history by pressing `F1` and then selecting/typing `REST Client NG: Clear Request History`.
+
+## Transform response bodies with jq
+
+Install jq and make it available on the VS Code extension host's `PATH`. In a trusted workspace, add `# @jq` above a request in a saved file.
+
+```http
+# @jq filters/users.jq
+GET https://api.example.com/users
+```
+
+Create `filters/users.jq` relative to the request file. For a JSON response with a `users` array, this filter keeps each user's ID and name.
+
+```jq
+.users | map({id, name})
+```
+
+The response preview and its **Copy Response Body** and **Save Response Body** actions use the filtered output. **Save Full Response** and named request references use the original response. Rerunning a request reads the filter file again. If jq fails, the extension shows a warning and previews the original response.
 
 ## Save Full Response
 ![Save Response](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/response.gif)
 In the upper right corner of the response preview tab, we add a new icon to save the latest response to local file system. After you click the `Save Full Response` icon, it will prompt the window with the saved response file path. You can click the `Open` button to open the saved response file in current workspace or click `Copy Path` to copy the saved response path to clipboard.
 
 ## Save Response Body
-Another icon in the upper right corner of the response preview tab is the `Save Response Body` button, it will only save the response body __ONLY__ to local file system. The extension of saved file is set according to the response `MIME` type, like if the `Content-Type` value in response header is `application/json`, the saved file will have extension `.json`. You can also overwrite the `MIME` type and extension mapping according to your requirement with the `rest-client.mimeAndFileExtensionMapping` setting.
+Another icon in the upper right corner of the response preview tab is the `Save Response Body` button, it will only save the response body __ONLY__ to local file system. The extension of saved file is set according to the response `MIME` type, like if the `Content-Type` value in response header is `application/json`, the saved file will have extension `.json`. You can also overwrite the `MIME` type and extension mapping according to your requirement with the `rest-client-ng.mimeAndFileExtensionMapping` setting.
 ```json
-"rest-client.mimeAndFileExtensionMapping": {
+"rest-client-ng.mimeAndFileExtensionMapping": {
     "application/atom+xml": "xml"
 }
 ```
@@ -309,7 +328,7 @@ We have supported some most common authentication schemes like _Basic Auth_, _Di
 HTTP Basic Auth is a widely used protocol for simple username/password authentication. We support __three__ formats of Authorization header to use Basic Auth.
 1. Add the value of Authorization header in the raw value of `username:password`.
 2. Add the value of Authorization header in the base64 encoding of `username:password`.
-3. Add the value of Authorization header in the raw value of `username` and `password`, which is separated by space. REST Client extension will do the base64 encoding automatically.
+3. Add the value of Authorization header in the raw value of `username` and `password`, which is separated by space. REST Client NG extension will do the base64 encoding automatically.
 
 The corresponding examples are as follows, they are equivalent:
 ```http
@@ -342,7 +361,7 @@ We support `PFX`, `PKCS12`, and `PEM` certificates. Before using your certificat
 - `passphrase`: Optional passphrase for the certificate if required
 You can add following piece of code in your setting file if your certificate is in `PEM` format:
 ```json
-"rest-client.certificates": {
+"rest-client-ng.certificates": {
     "localhost:8081": {
         "cert": "/Users/demo/Certificates/client.crt",
         "key": "/Users/demo/Keys/client.key"
@@ -355,7 +374,7 @@ You can add following piece of code in your setting file if your certificate is 
 ```
 Or if you have certificate in `PFX` or `PKCS12` format, setting code can be like this:
 ```json
-"rest-client.certificates": {
+"rest-client-ng.certificates": {
     "localhost:8081": {
         "pfx": "/Users/demo/Certificates/clientcert.p12",
         "passphrase": "123456"
@@ -397,7 +416,7 @@ Authorization: COGNITO <Username> <Password> <Region> <UserPoolId> <ClientId>
 
 ## Generate Code Snippet
 ![Generate Code Snippet](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/code-snippet.gif)
-Once you’ve finalized your request in REST Client extension, you might want to make the same request from your source code. We allow you to generate snippets of code in various languages and libraries that will help you achieve this. Once you prepared a request as previously, use shortcut `Ctrl+Alt+C`(`Cmd+Alt+C` for macOS), or right-click in the editor and then select `Generate Code Snippet` in the menu, or press `F1` and then select/type `Rest Client: Generate Code Snippet`, it will pop up the language pick list, as well as library list. After you selected the code snippet language/library you want, the generated code snippet will be previewed in a separate panel of Visual Studio Code, you can click the `Copy Code Snippet` icon in the tab title to copy it to clipboard.
+Once you’ve finalized your request in REST Client NG extension, you might want to make the same request from your source code. We allow you to generate snippets of code in various languages and libraries that will help you achieve this. Once you prepared a request as previously, use shortcut `Ctrl+Alt+C`(`Cmd+Alt+C` for macOS), or right-click in the editor and then select `Generate Code Snippet` in the menu, or press `F1` and then select/type `REST Client NG: Generate Code Snippet`, it will pop up the language pick list, as well as library list. After you selected the code snippet language/library you want, the generated code snippet will be previewed in a separate panel of Visual Studio Code, you can click the `Copy Code Snippet` icon in the tab title to copy it to clipboard.
 
 ## HTTP Language
 Add language support for HTTP request, with features like __syntax highlight__, __auto completion__, __code lens__ and __comment support__, when writing HTTP request in Visual Studio Code. By default, the language association will be automatically activated in two cases:
@@ -424,7 +443,7 @@ A single `http` file may define lots of requests and file level custom variables
 ![Goto Symbols](https://raw.githubusercontent.com/Huachao/vscode-restclient/master/images/navigate.png)
 
 ## Environments
-Environments give you the ability to customize requests using variables, and you can easily switch environment without changing requests in `http` file. A common usage is having different configurations for different web service environments, like devbox, sandbox, and production. We also support the __shared__ environment(identified by special environment name _$shared_) to provide a set of variables that are available in all environments. And you can define the same name variable in your specified environment to overwrite the value in shared environment. Currently, active environment's name is displayed at the right bottom of `Visual Studio Code`, when you click it, you can switch environment in the pop-up list. And you can also switch environment using shortcut `Ctrl+Alt+E`(`Cmd+Alt+E` for macOS), or press `F1` and then select/type `Rest Client: Switch Environment`.
+Environments give you the ability to customize requests using variables, and you can easily switch environment without changing requests in `http` file. A common usage is having different configurations for different web service environments, like devbox, sandbox, and production. We also support the __shared__ environment(identified by special environment name _$shared_) to provide a set of variables that are available in all environments. And you can define the same name variable in your specified environment to overwrite the value in shared environment. Currently, active environment's name is displayed at the right bottom of `Visual Studio Code`, when you click it, you can switch environment in the pop-up list. And you can also switch environment using shortcut `Ctrl+Alt+E`(`Cmd+Alt+E` for macOS), or press `F1` and then select/type `REST Client NG: Switch Environment`.
 
 Environments and including variables are defined directly in `Visual Studio Code` setting file, so you can create/update/delete environments and variables at any time you wish. If you __DO NOT__ want to use any environment, you can choose `No Environment` in the environment list. Notice that if you select `No Environment`, variables defined in shared environment are still available. See [Environment Variables](#environment-variables) for more details about environment variables.
 
@@ -439,7 +458,7 @@ Custom variables can cover different user scenarios with the benefit of environm
 #### Environment Variables
 For environment variables, each environment comprises a set of key value pairs defined in setting file, key and value are variable name and value respectively. Only variables defined in selected environment and shared environment are available to you. You can also reference the variables in shared environment with `{{$shared variableName}}` syntax in your active environment. Below is a sample piece of setting file for custom environments and environment level variables:
 ```json
-"rest-client.environmentVariables": {
+"rest-client-ng.environmentVariables": {
     "$shared": {
         "version": "v1",
         "prodToken": "foo",
@@ -580,7 +599,7 @@ GET {{baseUrl}}/comments/{{commentId}}/replies/{{getReplies.response.body.//repl
 System variables provide a pre-defined set of variables that can be used in any part of the request(Url/Headers/Body) in the format `{{$variableName}}`. Currently, we provide a few dynamic variables which you can use in your requests. The variable names are _case-sensitive_.
 * `{{$aadToken [new] [public|cn|de|us|ppe] [<domain|tenantId>] [aud:<domain|tenantId>]}}`: Add an Azure Active Directory token based on the following options (must be specified in order):
 
-  `new`: Optional. Specify `new` to force re-authentication and get a new token for the specified directory. Default: Reuse previous token for the specified directory from an in-memory cache. Expired tokens are refreshed automatically. (Use `F1 > Rest Client: Clear Azure AD Token Cache` or restart Visual Studio Code to clear the cache.)
+  `new`: Optional. Specify `new` to force re-authentication and get a new token for the specified directory. Default: Reuse previous token for the specified directory from an in-memory cache. Expired tokens are refreshed automatically. (Use `F1 > REST Client NG: Clear Azure AD Token Cache` or restart Visual Studio Code to clear the cache.)
 
   `public|cn|de|us|ppe`: Optional. Specify top-level domain (TLD) to get a token for the specified government cloud, `public` for the public cloud, or `ppe` for internal testing. Default: TLD of the REST endpoint; `public` if not valid.
 
@@ -593,7 +612,7 @@ System variables provide a pre-defined set of variables that can be used in any 
 
   `AzureCloud|AzureChinaCloud|AzureUSGovernment|ppe`: Optional. Specify sovereign cloud (or `ppe` for internal testing) to get a token for. Default: 'AzureCloud`.
 
-  `appOnly`: Optional. Specify `appOnly` to use make to use a client credentials flow to obtain a token. `aadV2ClientSecret` and `aadV2AppUri`must be provided as REST Client environment variables. `aadV2ClientId`, `aadV2TenantId` and `aadV2Cloud` may also be optionally provided via the environment. `aadV2ClientId` in environment will only be used for `appOnly` calls.
+  `appOnly`: Optional. Specify `appOnly` to use make to use a client credentials flow to obtain a token. `aadV2ClientSecret` and `aadV2AppUri`must be provided as REST Client NG environment variables. `aadV2ClientId`, `aadV2TenantId` and `aadV2Cloud` may also be optionally provided via the environment. `aadV2ClientId` in environment will only be used for `appOnly` calls.
 
   `scopes:<scope[,]>`: Optional. Comma delimited list of scopes that must have consent to allow the call to be successful. Not applicable for `appOnly` calls. `aadV2Scopes` may optionally be provided via the environment.
 
@@ -627,7 +646,7 @@ For example: Define a shell environment variable in `.bashrc` or similar on wind
   ```
   and with extension setting environment variables.
   ```json
-  "rest-client.environmentVariables": {
+  "rest-client-ng.environmentVariables": {
       "$shared": {
           "version": "v1"
       },
@@ -697,9 +716,9 @@ Date: {{$datetime rfc1123}}
 > More details about `aadToken` (Azure Active Directory Token) can be found on [Wiki](https://github.com/Huachao/vscode-restclient/wiki/Azure-Active-Directory-Authentication-Samples)
 
 ## Customize Response Preview
-REST Client Extension adds the ability to control the font family, size and weight used in the response preview.
+REST Client NG Extension adds the ability to control the font family, size and weight used in the response preview.
 
-By default, REST Client Extension only previews the full response in preview panel(_status line_, _headers_ and _body_). You can control which part should be previewed via the `rest-client.previewOption` setting:
+By default, REST Client NG Extension only previews the full response in preview panel(_status line_, _headers_ and _body_). You can control which part should be previewed via the `rest-client-ng.previewOption` setting:
 
 Option   | Description
 ---------|-----------------------------------------------------------------
@@ -709,40 +728,39 @@ body     | Only the response body is previewed
 exchange | Preview the whole HTTP exchange(request and response)
 
 ## Settings
-* `rest-client.followredirect`: Follow HTTP 3xx responses as redirects. (Default is __true__)
-* `rest-client.defaultHeaders`: If particular headers are omitted in request header, these will be added as headers for each request. (Default is `{ "User-Agent": "vscode-restclient", "Accept-Encoding": "gzip" }`)
-* `rest-client.timeoutinmilliseconds`: Timeout in milliseconds. 0 for infinity. (Default is __0__)
-* `rest-client.showResponseInDifferentTab`: Show response in different tab. (Default is __false__)
-* `rest-client.requestNameAsResponseTabTitle`: Show request name as the response tab title. Only valid when using html view, if no request name is specified defaults to "Response". (Default is __false__)
-* `rest-client.rememberCookiesForSubsequentRequests`: Save cookies from `Set-Cookie` header in response and use for subsequent requests. (Default is __true__)
-* `rest-client.enableTelemetry`: Send out anonymous usage data. (Default is __false__)
-* `rest-client.excludeHostsForProxy`: Excluded hosts when using proxy settings. (Default is __[]__)
-* `rest-client.fontSize`: Controls the font size in pixels used in the response preview. (Default is __13__)
-* `rest-client.fontFamily`: Controls the font family used in the response preview. (Default is __Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback"__)
-* `rest-client.fontWeight`: Controls the font weight used in the response preview. (Default is __normal__)
-* `rest-client.environmentVariables`: Sets the environments and custom variables belongs to it (e.g., `{"production": {"host": "api.example.com"}, "sandbox":{"host":"sandbox.api.example.com"}}`). (Default is __{}__)
-* `rest-client.mimeAndFileExtensionMapping`: Sets the custom mapping of mime type and file extension of saved response body. (Default is __{}__)
-* `rest-client.previewResponseInUntitledDocument`: Preview response in untitled document if set to true, otherwise displayed in html view. (Default is __false__)
-* `rest-client.certificates`: Certificate paths for different hosts. The path can be absolute path or relative path(relative to workspace or current http file). (Default is __{}__)
-* `rest-client.suppressResponseBodyContentTypeValidationWarning`: Suppress response body content type validation. (Default is __false__)
-* `rest-client.previewOption`: Response preview output option. Option details is described above. (Default is __full__)
-* `rest-client.disableHighlightResponseBodyForLargeResponse`: Controls whether to highlight response body for response whose size is larger than limit specified by `rest-client.largeResponseSizeLimitInMB`. (Default is __true__)
-* `rest-client.disableAddingHrefLinkForLargeResponse`: Controls whether to add href link in previewed response for response whose size is larger than limit specified by `rest-client.largeResponseSizeLimitInMB`. (Default is __true__)
-* `rest-client.largeResponseBodySizeLimitInMB`: Set the response body size threshold of MB to identify whether a response is a so-called 'large response', only used when `rest-client.disableHighlightResponseBodyForLargeResponse` and/or `rest-client.disableAddingHrefLinkForLargeResponse` is set to true. (Default is __5__)
-* `rest-client.previewColumn`: Response preview column option. 'current' for previewing in the column of current request file. 'beside' for previewing at the side of the current active column and the side direction depends on `workbench.editor.openSideBySideDirection` setting, either right or below the current editor column. (Default is __beside__)
-* `rest-client.previewResponsePanelTakeFocus`: Preview response panel will take focus after receiving response. (Default is __True__)
-* `rest-client.formParamEncodingStrategy`: Form param encoding strategy for request body of _x-www-form-urlencoded_. `automatic` for detecting encoding or not automatically and do the encoding job if necessary. `never` for treating provided request body as is, no encoding job will be applied. `always` for only use for the scenario that `automatic` option not working properly, e.g., some special characters(`+`) are not encoded correctly. (Default is __automatic__)
-* `rest-client.addRequestBodyLineIndentationAroundBrackets`: Add line indentation around brackets(`{}`, `<>`, `[]`) in request body when pressing enter. (Default is __true__)
-* `rest-client.decodeEscapedUnicodeCharacters`: Decode escaped unicode characters in response body. (Default is __false__)
-* `rest-client.logLevel`: The verbosity of logging in the REST output panel. (Default is __error__)
-* `rest-client.enableSendRequestCodeLens`: Enable/disable sending request CodeLens in request file. (Default is __true__)
-* `rest-client.enableCustomVariableReferencesCodeLens`: Enable/disable custom variable references CodeLens in request file. (Default is __true__)
-* `rest-client.useContentDispositionFilename`: Use `filename=` from `'content-disposition'` header (if available), to determine output file name, when saving response body. (Default is __true__)
+* `rest-client-ng.followredirect`: Follow HTTP 3xx responses as redirects. (Default is __true__)
+* `rest-client-ng.defaultHeaders`: If particular headers are omitted in request header, these will be added as headers for each request. (Default is `{ "User-Agent": "vscode-restclient", "Accept-Encoding": "gzip" }`)
+* `rest-client-ng.timeoutinmilliseconds`: Timeout in milliseconds. 0 for infinity. (Default is __0__)
+* `rest-client-ng.showResponseInDifferentTab`: Show response in different tab. (Default is __false__)
+* `rest-client-ng.requestNameAsResponseTabTitle`: Show request name as the response tab title. Only valid when using html view, if no request name is specified defaults to "Response". (Default is __false__)
+* `rest-client-ng.rememberCookiesForSubsequentRequests`: Save cookies from `Set-Cookie` header in response and use for subsequent requests. (Default is __true__)
+* `rest-client-ng.excludeHostsForProxy`: Excluded hosts when using proxy settings. (Default is __[]__)
+* `rest-client-ng.fontSize`: Controls the font size in pixels used in the response preview. (Default is __13__)
+* `rest-client-ng.fontFamily`: Controls the font family used in the response preview. (Default is __Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback"__)
+* `rest-client-ng.fontWeight`: Controls the font weight used in the response preview. (Default is __normal__)
+* `rest-client-ng.environmentVariables`: Sets the environments and custom variables belongs to it (e.g., `{"production": {"host": "api.example.com"}, "sandbox":{"host":"sandbox.api.example.com"}}`). (Default is __{}__)
+* `rest-client-ng.mimeAndFileExtensionMapping`: Sets the custom mapping of mime type and file extension of saved response body. (Default is __{}__)
+* `rest-client-ng.previewResponseInUntitledDocument`: Preview response in untitled document if set to true, otherwise displayed in html view. (Default is __false__)
+* `rest-client-ng.certificates`: Certificate paths for different hosts. The path can be absolute path or relative path(relative to workspace or current http file). (Default is __{}__)
+* `rest-client-ng.suppressResponseBodyContentTypeValidationWarning`: Suppress response body content type validation. (Default is __false__)
+* `rest-client-ng.previewOption`: Response preview output option. Option details is described above. (Default is __full__)
+* `rest-client-ng.disableHighlightResponseBodyForLargeResponse`: Controls whether to highlight response body for response whose size is larger than limit specified by `rest-client-ng.largeResponseSizeLimitInMB`. (Default is __true__)
+* `rest-client-ng.disableAddingHrefLinkForLargeResponse`: Controls whether to add href link in previewed response for response whose size is larger than limit specified by `rest-client-ng.largeResponseSizeLimitInMB`. (Default is __true__)
+* `rest-client-ng.largeResponseBodySizeLimitInMB`: Set the response body size threshold of MB to identify whether a response is a so-called 'large response', only used when `rest-client-ng.disableHighlightResponseBodyForLargeResponse` and/or `rest-client-ng.disableAddingHrefLinkForLargeResponse` is set to true. (Default is __5__)
+* `rest-client-ng.previewColumn`: Response preview column option. 'current' for previewing in the column of current request file. 'beside' for previewing at the side of the current active column and the side direction depends on `workbench.editor.openSideBySideDirection` setting, either right or below the current editor column. (Default is __beside__)
+* `rest-client-ng.previewResponsePanelTakeFocus`: Preview response panel will take focus after receiving response. (Default is __True__)
+* `rest-client-ng.formParamEncodingStrategy`: Form param encoding strategy for request body of _x-www-form-urlencoded_. `automatic` for detecting encoding or not automatically and do the encoding job if necessary. `never` for treating provided request body as is, no encoding job will be applied. `always` for only use for the scenario that `automatic` option not working properly, e.g., some special characters(`+`) are not encoded correctly. (Default is __automatic__)
+* `rest-client-ng.addRequestBodyLineIndentationAroundBrackets`: Add line indentation around brackets(`{}`, `<>`, `[]`) in request body when pressing enter. (Default is __true__)
+* `rest-client-ng.decodeEscapedUnicodeCharacters`: Decode escaped unicode characters in response body. (Default is __false__)
+* `rest-client-ng.logLevel`: The verbosity of logging in the REST output panel. (Default is __error__)
+* `rest-client-ng.enableSendRequestCodeLens`: Enable/disable sending request CodeLens in request file. (Default is __true__)
+* `rest-client-ng.enableCustomVariableReferencesCodeLens`: Enable/disable custom variable references CodeLens in request file. (Default is __true__)
+* `rest-client-ng.useContentDispositionFilename`: Use `filename=` from `'content-disposition'` header (if available), to determine output file name, when saving response body. (Default is __true__)
 
-Rest Client extension respects the proxy settings made for Visual Studio Code (`http.proxy` and `http.proxyStrictSSL`). Only HTTP and HTTPS proxies are supported.
+REST Client NG extension respects the proxy settings made for Visual Studio Code (`http.proxy` and `http.proxyStrictSSL`). Only HTTP and HTTPS proxies are supported.
 
 ### Per-request Settings
-REST Client Extension also supports request-level settings for each independent request. The syntax is similar with the request name definition, `# @settingName [settingValue]`, a required setting name as well as the optional setting value. Available settings are listed as following:
+REST Client NG Extension also supports request-level settings for each independent request. The syntax is similar with the request name definition, `# @settingName [settingValue]`, a required setting name as well as the optional setting value. Available settings are listed as following:
 
 Name | Syntax    | Description
 -----|-----------|--------------------------------------------------------------
@@ -762,4 +780,4 @@ See CHANGELOG [here](CHANGELOG.md)
 All the amazing [contributors](https://github.com/Huachao/vscode-restclient/graphs/contributors)❤️
 
 ## Feedback
-Please provide feedback through the [GitHub Issue](https://github.com/Huachao/vscode-restclient/issues) system, or fork the repository and submit PR.
+Please provide feedback through the [GitHub Issue](https://github.com/k0zmo/vscode-restclient-ng/issues) system, or fork the repository and submit PR.

@@ -5,7 +5,6 @@ import { SystemSettings } from '../models/configurationSettings';
 import { HttpRequest } from '../models/httpRequest';
 import { HttpResponse } from '../models/httpResponse';
 import { PreviewOption } from '../models/previewOption';
-import { trace } from '../utils/decorator';
 import { disposeAll } from '../utils/dispose';
 import { MimeUtility } from '../utils/mimeUtility';
 import { base64, formatHeaders, getHeader, isJSONString } from '../utils/misc';
@@ -25,24 +24,24 @@ export class HttpResponseWebview extends BaseWebview {
 
     private readonly urlRegex = /(https?:\/\/[^\s"'<>\]\)\\]+)/gi;
 
-    private readonly panelResponses: Map<WebviewPanel, HttpResponse>;
+    private readonly panelResponses: Map<WebviewPanel, { preview: HttpResponse, original: HttpResponse }>;
 
     private readonly clipboard: Clipboard = env.clipboard;
 
     protected get viewType(): string {
-        return 'rest-response';
+        return 'rest-client-ng-response';
     }
 
     protected get previewActiveContextKey(): string {
-        return 'httpResponsePreviewFocus';
+        return 'rest-client-ng.httpResponsePreviewFocus';
     }
 
     protected get isHTMLResponse(): string {
-        return 'isHTMLResponse';
+        return 'rest-client-ng.isHTMLResponse';
     }
 
     private get activeResponse(): HttpResponse | undefined {
-        return this.activePanel ? this.panelResponses.get(this.activePanel) : undefined;
+        return this.activePanel ? this.panelResponses.get(this.activePanel)?.preview : undefined;
     }
 
     private setIsHTMLResponse(response: HttpResponse | undefined) {
@@ -57,19 +56,19 @@ export class HttpResponseWebview extends BaseWebview {
         super(context);
 
         // Init response webview map
-        this.panelResponses = new Map<WebviewPanel, HttpResponse>();
+        this.panelResponses = new Map();
 
-        this.context.subscriptions.push(commands.registerCommand('rest-client.fold-response', this.foldResponseBody, this));
-        this.context.subscriptions.push(commands.registerCommand('rest-client.unfold-response', this.unfoldResponseBody, this));
-        this.context.subscriptions.push(commands.registerCommand('rest-client.preview-html-response-body', this.previewResponseBody, this));
-        this.context.subscriptions.push(commands.registerCommand('rest-client.show-raw-response', this.showRawResponse, this));
+        this.context.subscriptions.push(commands.registerCommand('rest-client-ng.fold-response', this.foldResponseBody, this));
+        this.context.subscriptions.push(commands.registerCommand('rest-client-ng.unfold-response', this.unfoldResponseBody, this));
+        this.context.subscriptions.push(commands.registerCommand('rest-client-ng.preview-html-response-body', this.previewResponseBody, this));
+        this.context.subscriptions.push(commands.registerCommand('rest-client-ng.show-raw-response', this.showRawResponse, this));
 
-        this.context.subscriptions.push(commands.registerCommand('rest-client.copy-response-body', this.copyBody, this));
-        this.context.subscriptions.push(commands.registerCommand('rest-client.save-response', this.save, this));
-        this.context.subscriptions.push(commands.registerCommand('rest-client.save-response-body', this.saveBody, this));
+        this.context.subscriptions.push(commands.registerCommand('rest-client-ng.copy-response-body', this.copyBody, this));
+        this.context.subscriptions.push(commands.registerCommand('rest-client-ng.save-response', this.save, this));
+        this.context.subscriptions.push(commands.registerCommand('rest-client-ng.save-response-body', this.saveBody, this));
     }
 
-    public async render(response: HttpResponse, column: ViewColumn) {
+    public async render(response: HttpResponse, column: ViewColumn, original = response) {
         let panel: WebviewPanel;
         if (this.settings.showResponseInDifferentTab || this.panels.length === 0) {
             panel = window.createWebviewPanel(
@@ -120,7 +119,7 @@ export class HttpResponseWebview extends BaseWebview {
 
         panel.reveal(column, !this.settings.previewResponsePanelTakeFocus);
 
-        this.panelResponses.set(panel, response);
+        this.panelResponses.set(panel, { preview: response, original });
         this.activePanel = panel;
 
         this.setIsHTMLResponse(this.activeResponse);
@@ -130,41 +129,36 @@ export class HttpResponseWebview extends BaseWebview {
         disposeAll(this.panels);
     }
 
-    @trace('Fold Response')
     private foldResponseBody() {
         this.activePanel?.webview.postMessage({ 'command': 'foldAll' });
     }
 
-    @trace('Unfold Response')
     private unfoldResponseBody() {
         this.activePanel?.webview.postMessage({ 'command': 'unfoldAll' });
     }
 
-    @trace('HTML Preview')
     private previewResponseBody() {
         if (this.activeResponse && this.activePanel) {
             this.activePanel.webview.html = this.activeResponse.body;
         }
     }
 
-    @trace('Raw')
     private showRawResponse() {
         if (this.activeResponse && this.activePanel) {
             this.activePanel.webview.html = this.getHtmlForWebview(this.activePanel, this.activeResponse);
         }
     }
 
-    @trace('Copy Response Body')
     private async copyBody() {
         if (this.activeResponse) {
             await this.clipboard.writeText(this.activeResponse.body);
         }
     }
 
-    @trace('Save Response')
     private async save() {
-        if (this.activeResponse) {
-            const fullResponse = this.getFullResponseString(this.activeResponse);
+        const original = this.activePanel && this.panelResponses.get(this.activePanel)?.original;
+        if (original) {
+            const fullResponse = this.getFullResponseString(original);
             const defaultFilePath = UserDataManager.getResponseSaveFilePath(`Response-${Date.now()}.http`);
             try {
                 await this.openSaveDialog(defaultFilePath, fullResponse);
@@ -174,7 +168,6 @@ export class HttpResponseWebview extends BaseWebview {
         }
     }
 
-    @trace('Save Response Body')
     private async saveBody() {
         if (this.activeResponse) {
             const fileName = HttpResponseWebview.getResponseBodyOuptutFilename(this.activeResponse, this.settings);
@@ -312,7 +305,7 @@ ${formatHeaders(response.headers)}`;
             const responseBodyPart = `${ResponseFormatUtility.formatBody(response.body, response.contentType, this.settings.suppressResponseBodyContentTypeValidationWarning)}`;
             if (this.settings.disableHighlightResponseBodyForLargeResponse &&
                 response.bodySizeInBytes > this.settings.largeResponseBodySizeLimitInMB * 1024 * 1024) {
-                code += responseBodyPart;
+                code += responseBodyPart.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             } else {
                 const bodyLanguageAlias = HttpResponseWebview.getHighlightLanguageAlias(response.contentType, responseBodyPart);
                 if (bodyLanguageAlias) {
