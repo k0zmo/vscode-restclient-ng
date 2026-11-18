@@ -84,6 +84,14 @@
       "include": "#comments"
     },
     {
+      "match": "^\\s*(@choice)\\s+([\\w-]+)\\s+[^\\s=][^=]*?\\s*=\\s*(\\S.*?)\\s*$",
+      "captures": {
+        "1": { "name": "keyword.other.http" },
+        "2": { "name": "variable.other.http" },
+        "3": { "name": "string.other.http" }
+      }
+    },
+    {
       "captures": {
         "1": {
           "name": "keyword.other.http"

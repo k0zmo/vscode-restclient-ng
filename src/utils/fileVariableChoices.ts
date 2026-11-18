@@ -28,16 +28,14 @@ export class FileVariableChoices {
         if (document.languageId === 'http') {
             for (let line = 0; line < document.lineCount; line++) {
                 const text = document.lineAt(line).text;
-                if (text.trim() && !CommentIdentifiersRegex.test(text) && !FileVariableDefinitionRegex.test(text)) {
-                    break;
-                }
-
                 const match = text.match(FileVariableChoiceRegex);
-                if (match && match[2].trim()) {
+                if (match) {
                     const [, name, label, value] = match;
                     const group = groups.get(name) ?? { line, options: [] };
                     group.options.push({ label: label.trim(), description: value });
                     groups.set(name, group);
+                } else if (text.trim() && !CommentIdentifiersRegex.test(text) && !FileVariableDefinitionRegex.test(text)) {
+                    break;
                 }
             }
         }

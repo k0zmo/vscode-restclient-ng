@@ -525,12 +525,12 @@ Content-Type: {{contentType}}
 
 #### File Variable Choices
 
-Use `# @choice <variable> <label> = <value>` above the first request in an HTTP file. Add one line per option. Labels can contain spaces, and values are used as written.
+Use `@choice <variable> <label> = <value>` above the first request in an HTTP file. Add one line per option. The `# @choice` and `// @choice` forms also work. Labels can contain spaces, and values are used as written.
 
 ```http
-# @choice fabricId Lab = fabric-123
-# @choice fabricId Staging = fabric-456
-# @choice fabricId Production = fabric-789
+@choice fabricId Lab = fabric-123
+@choice fabricId Staging = fabric-456
+@choice fabricId Production = fabric-789
 
 ###
 GET {{platformUrl}}/cluster/state/fabrics/{{fabricId}}

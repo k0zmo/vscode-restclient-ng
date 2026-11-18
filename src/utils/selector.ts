@@ -87,7 +87,7 @@ export class Selector {
     public static parseReqMetadatas(lines: string[]): Map<RequestMetadata, string | undefined> {
         const metadatas = new Map<RequestMetadata, string | undefined>();
         for (const line of lines) {
-            if (this.isEmptyLine(line) || this.isFileVariableDefinitionLine(line)) {
+            if (this.isEmptyLine(line) || this.isFileVariableDefinitionLine(line) || Constants.FileVariableChoiceRegex.test(line)) {
                 continue;
             }
 
@@ -138,7 +138,8 @@ export class Selector {
                     break;
                 }
 
-                if (options.ignoreCommentLine && this.isCommentLine(startLine)
+                if (Constants.FileVariableChoiceRegex.test(startLine)
+                    || options.ignoreCommentLine && this.isCommentLine(startLine)
                     || options.ignoreEmptyLine && this.isEmptyLine(startLine)
                     || options.ignoreFileVariableDefinitionLine && this.isFileVariableDefinitionLine(startLine)) {
                     start++;

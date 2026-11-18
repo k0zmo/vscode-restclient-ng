@@ -2,7 +2,7 @@
   "name": "rest-client-ng",
   "displayName": "REST Client NG",
   "description": "Send HTTP requests and filter JSON responses with jq",
-  "version": "0.26.2",
+  "version": "0.26.3",
   "publisher": "k0zmo",
   "author": {
     "name": "Huachao Mao",

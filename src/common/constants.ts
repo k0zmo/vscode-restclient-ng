@@ -65,7 +65,7 @@ export const RequestMetadataRegex: RegExp = /^\s*(?:#|\/{2})\s*@([\w-]+)(?:\s+(.
 export const CommentIdentifiersRegex: RegExp = /^\s*(#|\/{2})/;
 
 export const FileVariableDefinitionRegex: RegExp = /^\s*@([^\s=]+)\s*=\s*(.*?)\s*$/;
-export const FileVariableChoiceRegex = /^\s*(?:#|\/{2})\s*@choice\s+([\w-]+)\s+([^=]+?)\s*=\s*(\S.*?)\s*$/;
+export const FileVariableChoiceRegex = /^\s*(?:(?:#|\/{2})\s*)?@choice\s+([\w-]+)\s+([^\s=][^=]*?)\s*=\s*(\S.*?)\s*$/;
 export const VariableReferenceRegex = /\{{2}(.+?)\}{2}/g;
 
 export const RequestVariableDefinitionWithNameRegexFactory = (name: string, flags?: string): RegExp =>

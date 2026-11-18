@@ -19,8 +19,7 @@ export class HttpDocumentSymbolProvider implements DocumentSymbolProvider {
             let requestName: string | undefined;
             while (blockStart <= blockEnd) {
                 const line = lines[blockStart];
-                if (Selector.isEmptyLine(line) ||
-                    Selector.isCommentLine(line)) {
+                if (Selector.isEmptyLine(line) || Selector.isCommentLine(line) || Constants.FileVariableChoiceRegex.test(line)) {
                     if (Selector.isRequestVariableDefinitionLine(line)) {
                         requestName = Selector.getRequestVariableDefinitionName(line);
                     }

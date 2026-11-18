@@ -24,11 +24,12 @@ const { FileVariableChoices } = (() => {
 test('picks file-local values once, and asks again after the selected option changes', async () => {
     const lines = [
         '@platformUrl = https://example.test',
-        '# @choice fabricId Local lab = fabric-123',
+        '@choice fabricId Local lab = fabric-123',
         '// @choice fabricId Staging = fabric-456',
+        '# @choice fabricId Production = fabric-789',
         '###',
         'GET {{platformUrl}}/fabrics/{{fabricId}}',
-        '# @choice ignored Inside a request = value',
+        '@choice ignored Inside a request = value',
     ];
     const doc = {
         languageId: 'http',
@@ -37,7 +38,7 @@ test('picks file-local values once, and asks again after the selected option cha
         lineCount: lines.length,
         lineAt: index => ({ text: lines[index] }),
     };
-    const request = lines[4];
+    const request = lines[5];
 
     showQuickPick = () => assert.fail('This request should not prompt');
     assert.equal(await FileVariableChoices.resolveRequest(doc, 'GET {{platformUrl}}', new Map()), true);
@@ -45,7 +46,7 @@ test('picks file-local values once, and asks again after the selected option cha
     assert.deepEqual([...FileVariableChoices.getDefinitions(doc).keys()], ['fabricId']);
 
     showQuickPick = options => {
-        assert.deepEqual(options.map(option => option.label), ['Local lab', 'Staging']);
+        assert.deepEqual(options.map(option => option.label), ['Local lab', 'Staging', 'Production']);
         return options[1];
     };
     const variables = new Map();
