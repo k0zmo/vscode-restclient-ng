@@ -1,6 +1,7 @@
 import { EventEmitter, TextDocument, window } from 'vscode';
 import { CommentIdentifiersRegex, FileVariableChoiceRegex, FileVariableDefinitionRegex, VariableReferenceRegex } from '../common/constants';
 import { DocumentCache } from '../models/documentCache';
+import { FileVariableProvider } from './httpVariableProviders/fileVariableProvider';
 
 interface Choice {
     label: string;
@@ -69,14 +70,29 @@ export class FileVariableChoices {
         if (groups.size === 0) {
             return true;
         }
-        for (const [, reference] of request.matchAll(VariableReferenceRegex)) {
-            const name = reference.trim();
-            if (groups.has(name) && !variables.has(name)) {
-                const selection = this.getSelection(document, name) ?? await this.pick(document, name);
-                if (!selection) {
-                    return false;
+        const fileVariables = new Map((await FileVariableProvider.Instance.getFileVariables(document))
+            .map(({ name, value }) => [name, value]));
+        const visited = new Set<string>();
+        const pending = [request];
+        for (const text of pending) {
+            for (const [, reference] of text.matchAll(VariableReferenceRegex)) {
+                const name = reference.trim();
+                if (visited.has(name) || variables.has(name)) {
+                    continue;
                 }
-                variables.set(name, selection.description);
+                visited.add(name);
+                if (groups.has(name)) {
+                    const selection = this.getSelection(document, name) ?? await this.pick(document, name);
+                    if (!selection) {
+                        return false;
+                    }
+                    variables.set(name, selection.description);
+                } else {
+                    const alias = fileVariables.get(name.replace(/^%/, ''));
+                    if (alias !== undefined) {
+                        pending.push(alias);
+                    }
+                }
             }
         }
         return true;

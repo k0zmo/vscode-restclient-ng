@@ -4,7 +4,7 @@ const { test } = require('node:test');
 
 let showQuickPick;
 const load = Module._load;
-const { FileVariableChoices } = (() => {
+const { FileVariableChoices, FileVariableProvider } = (() => {
     Module._load = function (name, ...args) {
         if (name === 'vscode') {
             return {
@@ -12,10 +12,17 @@ const { FileVariableChoices } = (() => {
                 window: { showQuickPick: (...params) => showQuickPick(...params) },
             };
         }
+        if (name === './systemVariableProvider' || name === './requestVariableProvider' || name === './environmentVariableProvider') {
+            const className = name[2].toUpperCase() + name.slice(3);
+            return { [className]: { Instance: { has: async () => false } } };
+        }
         return load.call(this, name, ...args);
     };
     try {
-        return require('../out/src/utils/fileVariableChoices');
+        return {
+            ...require('../out/src/utils/fileVariableChoices'),
+            ...require('../out/src/utils/httpVariableProviders/fileVariableProvider'),
+        };
     } finally {
         Module._load = load;
     }
@@ -37,6 +44,7 @@ test('picks file-local values once, and asks again after the selected option cha
         version: 1,
         lineCount: lines.length,
         lineAt: index => ({ text: lines[index] }),
+        getText: () => lines.join('\n'),
     };
     const request = lines[5];
 
@@ -69,4 +77,42 @@ test('picks file-local values once, and asks again after the selected option cha
     assert.equal(await FileVariableChoices.resolveRequest(doc, request, new Map()), false);
     showQuickPick = options => options[1];
     assert.equal((await FileVariableChoices.pick(doc, 'fabricId')).description, 'fabric-999');
+});
+
+test('picks through nested file variables without prompting for an unrelated request', async () => {
+    const lines = [
+        '@choice nodeId One = node-$&-{{literal}}',
+        '@choice nodeId Two = node-2',
+        '@nodeId = stale',
+        '@base = {{platform_url}}/framecache/{{nodeId}}',
+        '@href = {{base}}/api/v1',
+        '@loop = {{loop}}',
+        'GET {{href}}/status',
+    ];
+    const doc = {
+        languageId: 'http',
+        uri: 'file:///nodes.http',
+        version: 1,
+        lineCount: lines.length,
+        lineAt: index => ({ text: lines[index] }),
+        getText: () => lines.join('\n'),
+    };
+    showQuickPick = () => assert.fail('Unrelated or cyclic variables should not open the picker');
+    assert.equal(await FileVariableChoices.resolveRequest(doc, 'GET {{platform_url}}/token/{{loop}}', new Map()), true);
+
+    showQuickPick = () => undefined;
+    assert.equal(await FileVariableChoices.resolveRequest(doc, 'GET {{href}}/status', new Map()), false);
+
+    showQuickPick = options => options[0];
+    const fileVariableOverrides = new Map([['platform_url', 'https://example.test']]);
+    assert.equal(await FileVariableChoices.resolveRequest(doc, 'GET {{href}}/status', fileVariableOverrides), true);
+    const context = { rawRequest: '', parsedRequest: '', fileVariableOverrides };
+    const provider = FileVariableProvider.Instance;
+    assert.equal((await provider.get('href', doc, context)).value, 'https://example.test/framecache/node-$&-{{literal}}/api/v1');
+
+    showQuickPick = options => options[1];
+    await FileVariableChoices.pick(doc, 'nodeId');
+    fileVariableOverrides.delete('nodeId');
+    assert.equal(await FileVariableChoices.resolveRequest(doc, 'GET {{href}}/status', fileVariableOverrides), true);
+    assert.equal((await provider.get('href', doc, context)).value, 'https://example.test/framecache/node-2/api/v1');
 });

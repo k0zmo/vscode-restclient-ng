@@ -549,7 +549,7 @@ Use `@choice <variable> <label> = <value>` above the first request in an HTTP fi
 GET {{platformUrl}}/cluster/state/fabrics/{{fabricId}}
 ```
 
-On the first send that directly references `{{fabricId}}`, select a value from the picker. Press Escape to cancel the send. The selection is shared by requests in that file for the extension session. Use the link above the choices to switch. If you change or remove the selected option, the next send asks you to pick again when options are available.
+On the first send that uses `{{fabricId}}`, select a value from the picker. This also works through file variables such as `@fabricPath = /fabrics/{{fabricId}}`. Press Escape to cancel the send. The selection is shared by requests in that file for the extension session. Use the link above the choices to switch. If you change or remove the selected option, the next send asks you to pick again when options are available.
 
 Choices override ordinary file and environment variables of the same name in the request. A request-level `# @prompt` for the same name takes precedence. After switching fabrics, use **Send Request** to apply the new selection. **Rerun Last Request** repeats the previously resolved request.
 

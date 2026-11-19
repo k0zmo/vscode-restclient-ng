@@ -4,7 +4,7 @@ import { DocumentCache } from '../../models/documentCache';
 import { ResolveErrorMessage } from '../../models/httpVariableResolveResult';
 import { VariableType } from '../../models/variableType';
 import { EnvironmentVariableProvider } from './environmentVariableProvider';
-import { HttpVariable, HttpVariableProvider } from './httpVariableProvider';
+import { HttpVariable, HttpVariableContext, HttpVariableProvider } from './httpVariableProvider';
 import { RequestVariableProvider } from './requestVariableProvider';
 import { SystemVariableProvider } from './systemVariableProvider';
 
@@ -46,7 +46,7 @@ export class FileVariableProvider implements HttpVariableProvider {
         return variables.some(v => v.name === name);
     }
 
-    public async get(name: string, document: TextDocument): Promise<HttpVariable> {
+    public async get(name: string, document: TextDocument, context?: HttpVariableContext): Promise<HttpVariable> {
         const isEncoded = name.startsWith("%");
         name = name.replace(/^%/, "");
         const variables = await this.getFileVariables(document);
@@ -54,8 +54,11 @@ export class FileVariableProvider implements HttpVariableProvider {
         if (!variable) {
             return { name, error: ResolveErrorMessage.FileVariableNotExist };
         } else {
-            const variableMap = await this.resolveFileVariables(document, variables);
-            let value = variableMap.get(name);
+            const overrides = context?.fileVariableOverrides;
+            const variableMap = await this.resolveFileVariables(document, variables, overrides);
+            // Replace after resolving aliases so a literal choice value is only inserted once.
+            let value = overrides?.get(name) ?? variableMap.get(name)?.replace(Constants.VariableReferenceRegex,
+                (reference, key: string) => overrides?.get(key.trim()) ?? reference);
             if (value !== undefined && isEncoded) {
                 value = encodeURIComponent(value);
             }
@@ -69,7 +72,7 @@ export class FileVariableProvider implements HttpVariableProvider {
         return [...variableMap.entries()].map(([name, value]) => ({ name, value }));
     }
 
-    private async getFileVariables(document: TextDocument): Promise<FileVariableValue[]> {
+    public async getFileVariables(document: TextDocument): Promise<FileVariableValue[]> {
         if (this.fileVariableCache.has(document)) {
             return this.fileVariableCache.get(document)!;
         }
@@ -104,9 +107,12 @@ export class FileVariableProvider implements HttpVariableProvider {
         return values;
     }
 
-    private async resolveFileVariables(document: TextDocument, variables: FileVariableValue[]): Promise<Map<string, string>> {
+    private async resolveFileVariables(document: TextDocument, variables: FileVariableValue[], overrides?: ReadonlyMap<string, string>): Promise<Map<string, string>> {
+        if (overrides?.size) {
+            variables = variables.filter(({ name }) => !overrides.has(name));
+        }
         // Resolve non-file variables in variable value
-        const fileVariableNames = new Set(variables.map(v => v.name));
+        const fileVariableNames = new Set([...variables.map(v => v.name), ...(overrides?.keys() ?? [])]);
         const resolvedVariables = await Promise.all(variables.map(
             async ({ name, value }) => {
                 const parsedValue = await this.processNonFileVariableValue(document, value, fileVariableNames);

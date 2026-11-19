@@ -76,7 +76,7 @@ export class Selector {
         }
 
         // variables replacement
-        selectedText = await VariableProcessor.processRawRequest(selectedText, promptVariables);
+        selectedText = await VariableProcessor.processRawRequest(selectedText, promptVariables, editor.document);
 
         return {
             text: selectedText,

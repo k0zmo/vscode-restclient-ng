@@ -14,6 +14,7 @@ export interface HttpVariable {
 export interface HttpVariableContext {
     rawRequest: string;
     parsedRequest: string;
+    fileVariableOverrides?: ReadonlyMap<string, string>;
 }
 
 export interface HttpVariableProvider {

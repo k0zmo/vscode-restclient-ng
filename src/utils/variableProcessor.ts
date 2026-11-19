@@ -18,8 +18,10 @@ export class VariableProcessor {
         [EnvironmentVariableProvider.Instance, true],
     ];
 
-    public static async processRawRequest(request: string, resolvedVariables: Map<string, string> = new Map<string, string>()) {
+    public static async processRawRequest(request: string, resolvedVariables: Map<string, string> = new Map<string, string>(),
+            document = getCurrentTextDocument()) {
         const variableReferenceRegex = new RegExp(VariableReferenceRegex);
+        const fileVariableOverrides = new Map(resolvedVariables);
         let result = '';
         let match: RegExpExecArray | null;
         let lastIndex = 0;
@@ -28,8 +30,7 @@ export class VariableProcessor {
             result += request.substring(lastIndex, match.index);
             lastIndex = variableReferenceRegex.lastIndex;
             const name = match[1].trim();
-            const document = getCurrentTextDocument();
-            const context = { rawRequest: request, parsedRequest: result };
+            const context = { rawRequest: request, parsedRequest: result, fileVariableOverrides };
             for (const [provider, cacheable] of this.providers) {
                 if (resolvedVariables.has(name)) {
                     result += resolvedVariables.get(name);
